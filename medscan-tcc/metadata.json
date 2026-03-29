@@ -1,0 +1,5 @@
+{
+  "name": "MedScan TCC",
+  "description": "Interface minimalista para submissão e processamento de laudos médicos.",
+  "requestFramePermissions": []
+}

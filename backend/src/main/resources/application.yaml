@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: tcc-project
+  datasource:
+    url: jdbc:sqlite:./tcc_project.db
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
