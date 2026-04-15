@@ -29,6 +29,8 @@ dependencies {
 	implementation 'org.xerial:sqlite-jdbc:3.44.0.0'
 	implementation 'org.hibernate.orm:hibernate-community-dialects:6.4.5.Final'
 	implementation 'org.modelmapper:modelmapper:3.2.4'
+	implementation 'com.azure:azure-sdk-bom'
+	implementation 'com.azure:azure-ai-formrecognizer'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
