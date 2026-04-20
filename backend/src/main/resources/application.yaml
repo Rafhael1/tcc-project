@@ -14,3 +14,10 @@ spring:
           batch_size: 20
         order_inserts: true
         order_updates: true
+
+google:
+  vision:
+    api-key: ${GOOGLE_VISION_API_KEY:}
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-1.5-flash}

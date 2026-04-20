@@ -1,17 +1,18 @@
 package br.com.rafhaelfreitas.tcc_project.controller;
 
+import br.com.rafhaelfreitas.tcc_project.domain.service.GenerateReportService;
+import br.com.rafhaelfreitas.tcc_project.domain.service.dto.GenerateReportResponse;
 import br.com.rafhaelfreitas.tcc_project.exception.GlobalExceptionHandler;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPage;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -24,18 +25,25 @@ class GenerateReportControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @MockBean
+    private GenerateReportService generateReportService;
+
     @Test
-    void shouldAcceptValidPng() throws Exception {
+    void shouldAcceptValidPdfAndReturnFileAndContent() throws Exception {
+        when(generateReportService.generateReport(any()))
+                .thenReturn(new GenerateReportResponse("pdf-base64-content", "laudo simplificado"));
+
         MockMultipartFile file = new MockMultipartFile(
                 "file",
-                "image.png",
-                "image/png",
-                "png-content".getBytes()
+                "report.pdf",
+                "application/pdf",
+                "valid-pdf".getBytes()
         );
 
         mockMvc.perform(multipart("/generate-report").file(file))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Arquivo válido para processamento"));
+                .andExpect(jsonPath("$.file").value("pdf-base64-content"))
+                .andExpect(jsonPath("$.content").value("laudo simplificado"));
     }
 
     @Test
@@ -50,35 +58,7 @@ class GenerateReportControllerTest {
         mockMvc.perform(multipart("/generate-report").file(file))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
-                        .value("Tipo de arquivo inválido. Tipos aceitos: pdf, png, jpeg, webp"));
-    }
-
-    @Test
-    void shouldRejectPdfWithMoreThanThreePages() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "report.pdf",
-                "application/pdf",
-                createPdfWithPages(4)
-        );
-
-        mockMvc.perform(multipart("/generate-report").file(file))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("PDF excede o limite máximo de 3 páginas"));
-    }
-
-    @Test
-    void shouldAcceptPdfWithThreePages() throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-                "file",
-                "report.pdf",
-                "application/pdf",
-                createPdfWithPages(3)
-        );
-
-        mockMvc.perform(multipart("/generate-report").file(file))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Arquivo válido para processamento"));
+                        .value("Tipo de arquivo inválido. Apenas PDF é aceito"));
     }
 
     @Test
@@ -86,16 +66,5 @@ class GenerateReportControllerTest {
         mockMvc.perform(multipart("/generate-report"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Required multipart part 'file' is missing"));
-    }
-
-    private byte[] createPdfWithPages(int pages) throws IOException {
-        try (PDDocument document = new PDDocument();
-             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-            for (int i = 0; i < pages; i++) {
-                document.addPage(new PDPage());
-            }
-            document.save(outputStream);
-            return outputStream.toByteArray();
-        }
     }
 }
