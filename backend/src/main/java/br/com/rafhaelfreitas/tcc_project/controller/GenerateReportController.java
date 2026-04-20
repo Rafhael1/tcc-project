@@ -48,7 +48,14 @@ public class GenerateReportController {
     }
 
     private void validatePdfPageLimit(MultipartFile file) {
-        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+        byte[] fileBytes;
+        try {
+            fileBytes = file.getBytes();
+        } catch (IOException ex) {
+            throw new BadRequestException("Falha ao ler o PDF enviado", ex);
+        }
+
+        try (PDDocument document = Loader.loadPDF(fileBytes)) {
             if (document.getNumberOfPages() > MAX_PDF_PAGES) {
                 throw new BadRequestException(String.format(
                         "PDF excede o limite máximo de %d páginas",
@@ -56,7 +63,10 @@ public class GenerateReportController {
                 ));
             }
         } catch (IOException ex) {
-            throw new BadRequestException("Falha ao processar o PDF enviado. Verifique se o arquivo não está corrompido.", ex);
+            throw new BadRequestException(
+                    "Falha ao processar o PDF enviado. Verifique se o arquivo não está corrompido ou inválido.",
+                    ex
+            );
         }
     }
 }
