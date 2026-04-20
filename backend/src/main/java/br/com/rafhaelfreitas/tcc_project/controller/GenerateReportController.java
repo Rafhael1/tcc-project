@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -49,8 +48,7 @@ public class GenerateReportController {
     }
 
     private void validatePdfPageLimit(MultipartFile file) {
-        try (InputStream inputStream = file.getInputStream();
-             PDDocument document = Loader.loadPDF(inputStream)) {
+        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
             if (document.getNumberOfPages() > MAX_PDF_PAGES) {
                 throw new BadRequestException(String.format(
                         "PDF excede o limite máximo de %d páginas",
