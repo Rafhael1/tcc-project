@@ -1,8 +1,6 @@
 package br.com.rafhaelfreitas.tcc_project.domain.service.impl;
 
 import br.com.rafhaelfreitas.tcc_project.domain.service.OcrService;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
@@ -20,6 +18,8 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class GoogleVisionOcrService implements OcrService {
@@ -87,7 +87,7 @@ public class GoogleVisionOcrService implements OcrService {
                 return fullText;
             }
             return firstResponse.path("textAnnotations").path(0).path("description").asText("");
-        } catch (IOException ex) {
+        } catch (RuntimeException ex) {
             throw new IllegalStateException("Failed to parse Google Vision OCR response", ex);
         }
     }
