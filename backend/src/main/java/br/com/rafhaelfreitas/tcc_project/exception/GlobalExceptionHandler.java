@@ -15,6 +15,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -185,6 +186,14 @@ public class GlobalExceptionHandler {
         log.warn("Missing parameter: {}", ex.getMessage());
         String message = String.format("Required parameter '%s' of type '%s' is missing",
                 ex.getParameterName(), ex.getParameterType());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestPartException(
+            MissingServletRequestPartException ex, HttpServletRequest request) {
+        log.warn("Missing multipart part: {}", ex.getMessage());
+        String message = String.format("Required multipart part '%s' is missing", ex.getRequestPartName());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
