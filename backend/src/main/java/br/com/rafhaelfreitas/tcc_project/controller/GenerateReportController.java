@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,11 +37,12 @@ public class GenerateReportController {
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
+        String normalizedContentType = contentType == null ? null : contentType.toLowerCase(Locale.ROOT);
+        if (normalizedContentType == null || !ALLOWED_CONTENT_TYPES.contains(normalizedContentType)) {
             throw new BadRequestException("Tipo de arquivo inválido. Tipos aceitos: pdf, png, jpeg, webp");
         }
 
-        if (MediaType.APPLICATION_PDF_VALUE.equalsIgnoreCase(contentType)) {
+        if (MediaType.APPLICATION_PDF_VALUE.equals(normalizedContentType)) {
             validatePdfPageLimit(file);
         }
     }
@@ -48,7 +50,10 @@ public class GenerateReportController {
     private void validatePdfPageLimit(MultipartFile file) {
         try (PDDocument document = Loader.loadPDF(file.getBytes())) {
             if (document.getNumberOfPages() > MAX_PDF_PAGES) {
-                throw new BadRequestException("PDF excede o limite máximo de 3 páginas");
+                throw new BadRequestException(String.format(
+                        "PDF excede o limite máximo de %d páginas",
+                        MAX_PDF_PAGES
+                ));
             }
         } catch (IOException ex) {
             throw new BadRequestException("Falha ao processar o PDF enviado", ex);
