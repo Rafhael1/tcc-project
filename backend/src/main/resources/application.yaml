@@ -15,9 +15,11 @@ spring:
         order_inserts: true
         order_updates: true
 
-google:
+azure:
   vision:
-    api-key: ${GOOGLE_VISION_API_KEY:}
+    endpoint: ${AZURE_VISION_ENDPOINT:}
+    api-key: ${AZURE_VISION_API_KEY:}
+google:
   gemini:
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_MODEL:gemini-1.5-flash}
