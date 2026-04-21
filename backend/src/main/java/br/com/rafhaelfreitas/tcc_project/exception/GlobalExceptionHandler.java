@@ -8,13 +8,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -134,22 +133,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
-    // ==================== Security Exceptions ====================
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
-            AccessDeniedException ex, HttpServletRequest request) {
-        log.warn("Access denied: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.FORBIDDEN, "Access denied", request);
-    }
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<ErrorResponse> handleAuthenticationException(
-            AuthenticationException ex, HttpServletRequest request) {
-        log.warn("Authentication failed: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.UNAUTHORIZED, "Authentication failed", request);
-    }
-
     // ==================== HTTP/Request Exceptions ====================
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -185,6 +168,14 @@ public class GlobalExceptionHandler {
         log.warn("Missing parameter: {}", ex.getMessage());
         String message = String.format("Required parameter '%s' of type '%s' is missing",
                 ex.getParameterName(), ex.getParameterType());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestPartException(
+            MissingServletRequestPartException ex, HttpServletRequest request) {
+        log.warn("Missing multipart part: {}", ex.getMessage());
+        String message = String.format("Required multipart part '%s' is missing", ex.getRequestPartName());
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 

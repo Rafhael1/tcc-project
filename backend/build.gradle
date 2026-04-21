@@ -26,11 +26,11 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.apache.pdfbox:pdfbox:3.0.3'
 	implementation 'org.xerial:sqlite-jdbc:3.44.0.0'
 	implementation 'org.hibernate.orm:hibernate-community-dialects:6.4.5.Final'
 	implementation 'org.modelmapper:modelmapper:3.2.4'
-	implementation 'com.azure:azure-sdk-bom'
-	implementation 'com.azure:azure-ai-formrecognizer'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
