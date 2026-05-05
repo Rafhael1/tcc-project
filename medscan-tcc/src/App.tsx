@@ -11,16 +11,28 @@ interface ProcessResult {
 
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
-  const [text, setText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<ProcessResult | null>(null);
+  const [error, setError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const setSelectedFile = (selectedFile: File) => {
+    if (selectedFile.type !== 'application/pdf') {
+      setError('Envie um arquivo PDF para processar o laudo.');
+      setFile(null);
+      setResult(null);
+      return;
+    }
+
+    setFile(selectedFile);
+    setError('');
+    setResult(null);
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      setResult(null);
+      setSelectedFile(e.target.files[0]);
     }
   };
 
@@ -38,34 +50,38 @@ export default function App() {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
-      setResult(null);
+      setSelectedFile(e.dataTransfer.files[0]);
     }
   }, []);
 
   const handleSubmit = async () => {
-    if (!file && !text.trim()) return;
+    if (!file) {
+      setError('Selecione um PDF antes de analisar.');
+      return;
+    }
 
     setIsProcessing(true);
     setResult(null);
+    setError('');
 
     try {
-      // In a real app, you'd use FormData for files
-      // For this TCC demo, we'll send text or file info
-      const response = await fetch('/api/process-report', {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/generate-report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: text,
-          fileName: file?.name || null,
-          // In a real scenario, you'd convert file to base64 here if needed
-        }),
+        body: formData,
       });
 
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.message || 'Não foi possível processar o laudo.');
+      }
+
       setResult(data);
     } catch (error) {
       console.error('Error processing report:', error);
+      setError(error instanceof Error ? error.message : 'Não foi possível processar o laudo.');
     } finally {
       setIsProcessing(false);
     }
@@ -81,8 +97,8 @@ export default function App() {
 
   const reset = () => {
     setFile(null);
-    setText('');
     setResult(null);
+    setError('');
   };
 
   return (
@@ -130,7 +146,7 @@ export default function App() {
                     ref={fileInputRef}
                     onChange={handleFileChange}
                     className="hidden"
-                    accept=".pdf,.jpg,.jpeg,.png,.txt"
+                    accept="application/pdf,.pdf"
                   />
                   
                   {file ? (
@@ -141,7 +157,7 @@ export default function App() {
                       <p className="text-slate-900 font-medium mb-1">{file.name}</p>
                       <p className="text-slate-500 text-sm">{(file.size / 1024).toFixed(1)} KB</p>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                        onClick={(e) => { e.stopPropagation(); setFile(null); setError(''); }}
                         className="mt-4 text-xs text-slate-400 hover:text-red-500 flex items-center gap-1"
                       >
                         <X className="w-3 h-3" /> Remover arquivo
@@ -153,36 +169,20 @@ export default function App() {
                         <FileUp className="w-6 h-6 text-blue-500" />
                       </div>
                       <p className="text-slate-900 font-medium mb-1">Arraste seu laudo aqui</p>
-                      <p className="text-slate-500 text-sm font-light">PDF, Imagens ou Texto (Max 10MB)</p>
+                      <p className="text-slate-500 text-sm font-light">Arquivo PDF do laudo médico</p>
                     </>
                   )}
                 </div>
 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div className="w-full border-t border-slate-100"></div>
+                {error && (
+                  <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
                   </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-slate-400 font-light italic">ou cole o texto abaixo</span>
-                  </div>
-                </div>
-
-                {/* Text Input Area */}
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                    <FileText className="w-3 h-3" /> Conteúdo do Laudo
-                  </label>
-                  <textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    placeholder="Digite ou cole o conteúdo do laudo médico aqui..."
-                    className="w-full h-40 p-4 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none font-light text-slate-700"
-                  />
-                </div>
+                )}
 
                 <button
                   onClick={handleSubmit}
-                  disabled={isProcessing || (!file && !text.trim())}
+                  disabled={isProcessing || !file}
                   className={cn(
                     "w-full py-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-sm",
                     isProcessing 
