@@ -205,7 +205,7 @@ public class PdfBoxGenerationService implements PdfGenerationService {
     }
 
     private static String sanitize(String text) {
-        return text == null ? "" : text
+        String sanitized = text == null ? "" : text
                 .replace("\t", " ")
                 .replace("\u2013", "-")
                 .replace("\u2014", "-")
@@ -214,6 +214,19 @@ public class PdfBoxGenerationService implements PdfGenerationService {
                 .replace("\u2018", "'")
                 .replace("\u2019", "'")
                 .replace("\u2022", "-");
+
+        return stripPresentationMarkup(sanitized);
+    }
+
+    private static String stripPresentationMarkup(String text) {
+        return text
+                .replaceAll("(?m)^#{1,6}\\s+", "")
+                .replaceAll("(?m)^\\s*[-*]\\s+", "")
+                .replaceAll("(?m)^\\s*>+\\s?", "")
+                .replaceAll("(^|\\s)[*_]{1,3}([^*_]+)[*_]{1,3}(?=\\s|$|[.,;:!?])", "$1$2")
+                .replace("```", "")
+                .replace("`", "")
+                .trim();
     }
 
     private record ReportView(String summary, String details, String recommendation, String legal) {

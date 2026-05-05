@@ -28,8 +28,18 @@ const stripJsonFence = (content: string) => (
     .replace(/\s*```$/i, '')
 );
 
+const cleanReportText = (content: string) => (
+  content
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/(^|\s)[*_]{1,3}([^*_]+)[*_]{1,3}(?=\s|$|[.,;:!?])/g, '$1$2')
+    .replace(/^\s*[-*]\s+/gm, '')
+    .replace(/^\s*>+\s?/gm, '')
+    .replace(/`{1,3}/g, '')
+    .trim()
+);
+
 const stringifyReportValue = (value: unknown) => {
-  if (typeof value === 'string') return value.trim();
+  if (typeof value === 'string') return cleanReportText(value);
   if (Array.isArray(value)) return value.map(stringifyReportValue).filter(Boolean).join('\n');
   if (value && typeof value === 'object') {
     return Object.entries(value)
@@ -37,14 +47,15 @@ const stringifyReportValue = (value: unknown) => {
       .filter(Boolean)
       .join('\n');
   }
-  return value == null ? '' : String(value);
+  return value == null ? '' : cleanReportText(String(value));
 };
 
 const parseResultContent = (content: string): ParsedResult => {
-  const fallback = content?.trim() || 'Nenhum conteúdo foi gerado.';
+  const jsonCandidate = stripJsonFence(content || '');
+  const fallback = cleanReportText(jsonCandidate) || 'Nenhum conteúdo foi gerado.';
 
   try {
-    const parsed = JSON.parse(stripJsonFence(fallback)) as Record<string, unknown>;
+    const parsed = JSON.parse(jsonCandidate) as Record<string, unknown>;
     const report = {
       summary: stringifyReportValue(parsed.summary) || 'Laudo processado com sucesso.',
       details: stringifyReportValue(parsed.details) || 'Os detalhes do laudo foram processados pelo sistema.',

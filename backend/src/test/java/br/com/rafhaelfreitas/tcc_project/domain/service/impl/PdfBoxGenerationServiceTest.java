@@ -16,10 +16,10 @@ class PdfBoxGenerationServiceTest {
     void shouldRenderStructuredJsonAsReadableReport() throws Exception {
         String content = """
                 {
-                  "summary": "Exame sem alterações críticas.",
-                  "details": "Os achados foram descritos em linguagem simples.",
-                  "recommendation": "Levar o resultado ao médico responsável.",
-                  "legal": "Este documento não substitui avaliação profissional."
+                  "summary": "### Resumo\\nExame sem **alterações críticas**.",
+                  "details": "### Achados\\n* Os achados foram descritos em linguagem simples.",
+                  "recommendation": "**Levar o resultado** ao médico responsável.",
+                  "legal": "***Este documento não substitui avaliação profissional.***"
                 }
                 """;
 
@@ -34,6 +34,9 @@ class PdfBoxGenerationServiceTest {
             assertTrue(pdfText.contains("Detalhes explicados"));
             assertTrue(pdfText.contains("Levar o resultado ao médico responsável."));
             assertFalse(pdfText.contains("\"summary\""));
+            assertFalse(pdfText.contains("###"));
+            assertFalse(pdfText.contains("**"));
+            assertFalse(pdfText.contains("***"));
             assertFalse(pdfText.contains("{"));
         }
     }
