@@ -339,7 +339,7 @@ export default function App() {
                         key={section.title}
                         className={cn(
                           'rounded-xl border p-6 shadow-sm',
-                          section.title === 'Detalhes explicados' && 'lg:col-span-2',
+                          ['Resumo', 'Detalhes explicados'].includes(section.title) && 'lg:col-span-2',
                           section.className
                         )}
                       >
