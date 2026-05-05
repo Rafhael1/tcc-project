@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Upload, FileText, Send, CheckCircle2, Loader2, Download, X, FileUp } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardList, Download, FileUp, Loader2, RotateCcw, Send, ShieldCheck, Stethoscope, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '@/src/lib/utils';
@@ -8,6 +8,55 @@ interface ProcessResult {
   file: string;
   content: string;
 }
+
+interface ReportContent {
+  summary: string;
+  details: string;
+  recommendation: string;
+  legal: string;
+}
+
+interface ParsedResult {
+  report: ReportContent | null;
+  fallback: string;
+}
+
+const stripJsonFence = (content: string) => (
+  content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+);
+
+const stringifyReportValue = (value: unknown) => {
+  if (typeof value === 'string') return value.trim();
+  if (Array.isArray(value)) return value.map(stringifyReportValue).filter(Boolean).join('\n');
+  if (value && typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, entry]) => `${key}: ${stringifyReportValue(entry)}`)
+      .filter(Boolean)
+      .join('\n');
+  }
+  return value == null ? '' : String(value);
+};
+
+const parseResultContent = (content: string): ParsedResult => {
+  const fallback = content?.trim() || 'Nenhum conteúdo foi gerado.';
+
+  try {
+    const parsed = JSON.parse(stripJsonFence(fallback)) as Record<string, unknown>;
+    const report = {
+      summary: stringifyReportValue(parsed.summary) || 'Laudo processado com sucesso.',
+      details: stringifyReportValue(parsed.details) || 'Os detalhes do laudo foram processados pelo sistema.',
+      recommendation: stringifyReportValue(parsed.recommendation) || 'Consulte um profissional de saúde para interpretar os resultados.',
+      legal: stringifyReportValue(parsed.legal) || 'Este conteúdo não substitui avaliação médica profissional.',
+    };
+
+    return { report, fallback };
+  } catch {
+    return { report: null, fallback };
+  }
+};
 
 export default function App() {
   const [file, setFile] = useState<File | null>(null);
@@ -101,12 +150,40 @@ export default function App() {
     setError('');
   };
 
+  const parsedResult = result ? parseResultContent(result.content) : null;
+  const reportSections = parsedResult?.report ? [
+    {
+      title: 'Resumo',
+      content: parsedResult.report.summary,
+      icon: Stethoscope,
+      className: 'border-blue-100 bg-blue-50/60 text-blue-700',
+    },
+    {
+      title: 'Detalhes explicados',
+      content: parsedResult.report.details,
+      icon: ClipboardList,
+      className: 'border-slate-200 bg-white text-slate-700',
+    },
+    {
+      title: 'Próximos passos',
+      content: parsedResult.report.recommendation,
+      icon: CheckCircle2,
+      className: 'border-emerald-100 bg-emerald-50/70 text-emerald-700',
+    },
+    {
+      title: 'Aviso legal',
+      content: parsedResult.report.legal,
+      icon: ShieldCheck,
+      className: 'border-amber-100 bg-amber-50/70 text-amber-700',
+    },
+  ] : [];
+
   return (
     <div className="min-h-screen bg-[#F9FAFB] flex flex-col items-center py-12 px-4 sm:px-6">
       <motion.header 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-3xl mb-12 text-center"
+        className="w-full max-w-5xl mb-12 text-center"
       >
         <h1 className="text-3xl font-light tracking-tight text-slate-900 mb-2">
           MedScan <span className="font-medium text-blue-600">TCC</span>
@@ -116,7 +193,7 @@ export default function App() {
         </p>
       </motion.header>
 
-      <main className="w-full max-w-3xl space-y-6">
+      <main className="w-full max-w-5xl space-y-6">
         <AnimatePresence mode="wait">
           {!result ? (
             <motion.div
@@ -124,7 +201,7 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+              className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
             >
               <div className="p-8 space-y-8">
                 {/* File Upload Area */}
@@ -212,43 +289,75 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-                <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
-                      <CheckCircle2 className="w-5 h-5 text-blue-600" />
+              <div className="rounded-2xl bg-slate-950 text-white shadow-sm overflow-hidden">
+                <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 shrink-0 rounded-xl bg-white/10 flex items-center justify-center">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-300" />
                     </div>
-                    <div>
-                      <h2 className="text-lg font-medium text-slate-900">Análise Concluída</h2>
-                      <p className="text-sm text-slate-500 font-light">Resultados processados pelo sistema</p>
+                    <div className="space-y-1">
+                      <h2 className="text-2xl font-medium tracking-normal">Análise concluída</h2>
+                      <p className="text-sm text-slate-300">Resultado simplificado e PDF pronto para download</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={reset}
-                    className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
-                  >
-                    Nova análise
-                  </button>
-                </div>
-
-                <div className="markdown-body prose prose-slate max-w-none">
-                  <ReactMarkdown>{result.content}</ReactMarkdown>
-                </div>
-
-                <div className="mt-10 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="flex items-center gap-2 text-sm text-slate-500">
-                    <FileText className="w-4 h-4" />
-                    <span>Arquivo gerado disponível para download</span>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <button
+                      onClick={reset}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 px-4 py-3 text-sm text-slate-100 transition-colors hover:bg-white/10"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Nova análise
+                    </button>
+                    <button
+                      onClick={downloadResultFile}
+                      className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-500 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-400"
+                    >
+                      <Download className="w-4 h-4" />
+                      Baixar PDF
+                    </button>
                   </div>
-                  <button
-                    onClick={downloadResultFile}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-200 active:scale-95"
-                  >
-                    <Download className="w-4 h-4" />
-                    Baixar Laudo PDF
-                  </button>
                 </div>
               </div>
+
+              {parsedResult?.report ? (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {reportSections.map((section) => {
+                    const Icon = section.icon;
+                    return (
+                      <section
+                        key={section.title}
+                        className={cn(
+                          'rounded-xl border p-6 shadow-sm',
+                          section.title === 'Detalhes explicados' && 'lg:col-span-2',
+                          section.className
+                        )}
+                      >
+                        <div className="mb-4 flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/70">
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <h3 className="text-base font-semibold text-slate-900">{section.title}</h3>
+                        </div>
+                        <p className="whitespace-pre-line text-sm leading-7 text-slate-700">
+                          {section.content}
+                        </p>
+                      </section>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-4 flex items-center gap-3 text-amber-700">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50">
+                      <AlertTriangle className="h-5 w-5" />
+                    </div>
+                    <h3 className="text-base font-semibold text-slate-900">Resultado gerado</h3>
+                  </div>
+                  <div className="markdown-body prose prose-slate max-w-none">
+                    <ReactMarkdown>{parsedResult?.fallback || result.content}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
