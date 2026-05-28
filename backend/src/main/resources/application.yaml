@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: tcc-project
+  datasource:
+    url: jdbc:sqlite:./tcc_project.db
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+azure:
+  vision:
+    endpoint: ${AZURE_VISION_ENDPOINT:https://tcc-document-processor.cognitiveservices.azure.com/}
+    api-key: ${AZURE_VISION_API_KEY:DIRN3a4GqWhiHNANTDkEgQlD95Pg5jz8rY5gzfRqd5V2YytteDuFJQQJ99CDACZoyfiXJ3w3AAALACOGm88t}
+google:
+  gemini:
+    api-key: ${GEMINI_API_KEY:AIzaSyCOkq6G3lRhqNy2ogz8RcR24ha2sNHJmPI}
+    model: ${GEMINI_MODEL:gemini-flash-latest}

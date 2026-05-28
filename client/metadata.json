@@ -1,0 +1,5 @@
+{
+  "name": "Processador de Laudo",
+  "description": "Interface minimalista para submissão e processamento de laudos médicos.",
+  "requestFramePermissions": []
+}
